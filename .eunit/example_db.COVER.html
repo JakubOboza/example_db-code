@@ -1,0 +1,94 @@
+<html>
+<head><title>.eunit/example_db.COVER.html</title></head><body bgcolor=white text=black>
+<pre>
+File generated from /private/tmp/example_db/.eunit/example_db.erl by COVER 2012-03-28 at 22:19:35
+
+****************************************************************************
+
+        |  -module(example_db).
+        |  -behaviour(gen_server).
+        |  
+        |  -author("jakub.oboza@gmail.com").
+        |  -define(Prefix, "example").
+        |  
+        |  -export([start_link/0]).
+        |  -export([init/1, handle_call/3, handle_cast/2, terminate/2, handle_info/2, code_change/3, stop/1]).
+        |  -export([get_script/2, save_script/3]).
+        |  
+        |  % public api
+        |  
+        |  start_link() -&gt;
+     1..|    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+        |  
+        |  init([]) -&gt;
+     1..|    {ok, Redis} = eredis:start_link(),
+     1..|    {ok, Redis}.
+        |  
+        |  stop(_Pid) -&gt;
+     1..|    stop().
+        |  
+        |  stop() -&gt;
+     1..|      gen_server:cast(?MODULE, stop).
+        |  
+        |  %% public client api
+        |  
+        |  get_script(Api, Method) -&gt;
+     1..|    gen_server:call(?MODULE, {get_script, Api, Method}).
+        |  
+        |  save_script(Api, Method, Script) -&gt;
+     1..|    gen_server:call(?MODULE, {save_script, Api, Method, Script}).
+        |  
+        |  %% genserver handles
+        |  
+        |  handle_call({get_script, Api, Method}, _From, Redis) -&gt;
+     1..|    Response = eredis:q(Redis, [ "GET", get_key(Api, Method) ]),
+     1..|    {reply, Response, Redis};
+        |  
+        |  handle_call({save_script, Api, Method, Script}, _From, Redis) -&gt;
+     1..|    Response = eredis:q(Redis, ["SET", get_key(Api, Method), Script]),
+     1..|    {reply, Response, Redis};
+        |  
+        |  handle_call(_Message, _From, Redis) -&gt;
+<font color=red>     0..|    {reply, error, Redis}.</font>
+        |  
+     1..|  handle_cast(_Message, Redis) -&gt; {noreply, Redis}.
+<font color=red>     0..|  handle_info(_Message, Redis) -&gt; {noreply, Redis}.</font>
+<font color=red>     0..|  terminate(_Reason, _Redis) -&gt; ok.</font>
+<font color=red>     0..|  code_change(_OldVersion, Redis, _Extra) -&gt; {ok, Redis}.</font>
+        |  
+        |  %% helper methods
+        |  
+        |  get_key(Api, Method) -&gt;
+     2..|    generate_key([Api, Method]).
+        |  
+        |  generate_key(KeysList) -&gt;
+     3..|    lists:foldl(fun(Key, Acc) -&gt; Acc ++ ":" ++ Key end, ?Prefix, KeysList).
+        |  
+        |  % tests
+        |  
+        |  -ifdef(TEST).
+        |  -include_lib("eunit/include/eunit.hrl").
+        |  -endif.
+        |  
+        |  
+        |  -ifdef(TEST).
+        |  
+        |  generate_key_test() -&gt;
+     1..|    Key = generate_key(["one", "two", "three"]),
+     1..|    ?assertEqual("example:one:two:three", Key).
+        |  
+        |  server_test_() -&gt;
+     2..|    {setup, fun() -&gt; example_db:start_link() end,
+     1..|     fun(_Pid) -&gt; example_db:stop(_Pid) end,
+        |     fun generate_example_db_tests/1}.
+        |  
+        |  generate_example_db_tests(_Pid) -&gt;
+     1..|    [
+     1..|      ?_assertEqual({ok,&lt;&lt;"OK"&gt;&gt;}, example_db:save_script("jakub", "oboza", &lt;&lt;"yo dwang"&gt;&gt;) ),
+     1..|      ?_assertEqual({ok,&lt;&lt;"yo dwang"&gt;&gt;}, example_db:get_script("jakub", "oboza") )
+        |    ].
+        |  
+        |  -endif.
+</pre>
+</body>
+</html>
